@@ -4,6 +4,7 @@ import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.types.StructType;
 
 
 public class Kmeans {
@@ -13,8 +14,16 @@ public class Kmeans {
                 .appName("JavaKMeansExample")
                 .getOrCreate();
 
-        Dataset<Row> dataset = spark.read().format("libsvm").load("output.txt");
+
+        StructType schema = new StructType()
+                .add("latitude", "double")
+                .add("longtitude", "double");
+
+
+        //TODO read and format data from local txt file
+        Dataset<Row> dataset = spark.read().schema(schema).load("output.txt");
         // Trains a k-means model.
+        //TODO understand the meaning of argument
         KMeans kmeans = new KMeans().setK(2).setSeed(1L);
         KMeansModel model = kmeans.fit(dataset);
         double WSSSE = model.computeCost(dataset);
