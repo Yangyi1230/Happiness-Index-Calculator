@@ -3,10 +3,7 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created Date: 12/10/17
@@ -20,6 +17,7 @@ public class IndexValueCalculator {
     Map<Integer, Double> valueTwitter = new HashMap<>();
     Map<Integer, Double> value311 = new HashMap<>();
     Map<Integer, Double> valueCrime = new HashMap<>();
+    Map<Integer, Double> indexMap = new TreeMap<>();
 
     public IndexValueCalculator() {
         read();
@@ -105,11 +103,9 @@ public class IndexValueCalculator {
             checkT.addValue(normalT);
             checkC.addValue(normalC);
             check3.addValue(normal3);
-
+            System.out.println(i + " " + normalT + " " + normalC + " " + normal3);
+            indexMap.put(i, normal3 + normalC + normalT);
         }
-
         System.out.println(checkT.getStandardDeviation() + " " + checkC.getStandardDeviation() + " " + check3.getStandardDeviation());
-
-
     }
 }
