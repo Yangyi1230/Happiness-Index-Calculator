@@ -5,11 +5,11 @@
 public class MetaData {
     double avgLatitude;
     double avgLongitude;
-    int weight;
+    double value;
 
-    public MetaData(double avgLatitude, double avgLongitude, int weight) {
+    public MetaData(double avgLatitude, double avgLongitude, double value) {
         this.avgLatitude = avgLatitude;
         this.avgLongitude = avgLongitude;
-        this.weight = weight;
+        this.value = value;
     }
 }

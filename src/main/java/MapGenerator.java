@@ -7,17 +7,14 @@ import java.util.TreeMap;
 /**
  * Created Date: 11/30/17
  */
-public class Reader {
-    Map<String, List<String[]>> tupleMap = new TreeMap<>();
+public class MapGenerator {
+    Map<String, List<String[]>> tupleMap;
     Map<String, MetaData> metaDataMap = new TreeMap<>();
+    Map<Integer, Double> indexMap;
 
-
-    public static void main(String args[]) {
-        Reader reader = new Reader();
-        reader.read();
-        reader.compute();
-        reader.exportToFIle();
-        System.out.println("");
+    public MapGenerator(Map<String, List<String[]>> tupleMap, Map<Integer, Double> indexMap) {
+        this.tupleMap = tupleMap;
+        this.indexMap = indexMap;
     }
 
     public void read() {
@@ -41,14 +38,14 @@ public class Reader {
         }
     }
 
-    public void exportToFIle() {
+    public void exportToFile() {
         try {
             File targetFile = new File("output.csv");
             FileWriter fileWriter = new FileWriter(targetFile);
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
             for (Map.Entry<String, MetaData> entry : metaDataMap.entrySet()) {
                 MetaData data = entry.getValue();
-                bufferedWriter.write(data.avgLatitude + "," + data.avgLongitude + "," + data.weight + "\n");
+                bufferedWriter.write(data.avgLatitude + "," + data.avgLongitude + "," + data.value + "\n");
             }
             bufferedWriter.flush();
         } catch (Exception e) {
@@ -57,7 +54,6 @@ public class Reader {
     }
 
     public void compute() {
-
         for (Map.Entry<String, List<String[]>> entry : tupleMap.entrySet()) {
             String key = entry.getKey();
             List<String[]> tuples = entry.getValue();
@@ -68,7 +64,7 @@ public class Reader {
                 longitude += Double.parseDouble(tuple[1]);
             }
 
-            MetaData metaData = new MetaData(latitude / size, longitude / size, size);
+            MetaData metaData = new MetaData(latitude / size, longitude / size, indexMap.get(key));
             metaDataMap.put(key, metaData);
         }
     }

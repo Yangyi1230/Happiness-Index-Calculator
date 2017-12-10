@@ -3,29 +3,35 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created Date: 12/10/17
  */
-public class IndexValueCalculator {
+
+
+public class IndexGenerator {
 
     static final int clusterNum = 2000;
+    public Map<Integer, Double> indexMap = new HashMap<>();
     Map<Integer, List<Record>> mapTwitter = new HashMap<>();
     Map<Integer, List<Record>> map311 = new HashMap<>();
     Map<Integer, List<Record>> mapCrime = new HashMap<>();
     Map<Integer, Double> valueTwitter = new HashMap<>();
     Map<Integer, Double> value311 = new HashMap<>();
     Map<Integer, Double> valueCrime = new HashMap<>();
-    Map<Integer, Double> indexMap = new TreeMap<>();
+    Map<String, List<String[]>> tupleMap = new HashMap<>();
 
-    public IndexValueCalculator() {
+    public IndexGenerator() {
         read();
         valueCompute();
     }
 
     public static void main(String args[]) {
-        IndexValueCalculator indexValueCalculator = new IndexValueCalculator();
+        IndexGenerator indexGenerator = new IndexGenerator();
         System.out.println("test");
     }
 
@@ -36,8 +42,15 @@ public class IndexValueCalculator {
             BufferedReader bufferedReader = new BufferedReader(fileReader);
             String line;
             while ((line = bufferedReader.readLine()) != null) {
-                String[] tuple = line.split(",");
-                Record record = new Record(tuple[0], tuple[1], tuple[2], tuple[3], tuple[4]);
+                String[] fields = line.split(",");
+                Record record = new Record(fields[0], fields[1], fields[2], fields[3], fields[4]);
+                String[] tuple = {String.valueOf(record.getLatitude()), String.valueOf(record.getLongitude()), String.valueOf(record.getClusterId())};
+
+                if (!tupleMap.containsKey(tuple[2])) {
+                    tupleMap.put(tuple[2], new ArrayList<>());
+                }
+                tupleMap.get(tuple[2]).add(tuple);
+
                 if (record.getSourceId() == 0) {
                     if (!mapTwitter.containsKey(record.getClusterId()))
                         mapTwitter.put(record.getClusterId(), new ArrayList<>());
@@ -81,7 +94,6 @@ public class IndexValueCalculator {
                 valueCrime.put(i, avgC);
                 value311.put(i, avg3);
 
-                //System.out.println(i + " " + avgT + " " + avgC + " " + avg3);
             }
         }
 
