@@ -1,15 +1,15 @@
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * Created Date: 11/30/17
  */
 public class MapGenerator {
     Map<String, List<String[]>> tupleMap;
-    Map<String, MetaData> metaDataMap = new TreeMap<>();
+    Map<String, MetaData> metaDataMap = new HashMap<>();
     Map<Integer, Double> indexMap;
 
     public MapGenerator(Map<String, List<String[]>> tupleMap, Map<Integer, Double> indexMap) {
@@ -45,7 +45,7 @@ public class MapGenerator {
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
             for (Map.Entry<String, MetaData> entry : metaDataMap.entrySet()) {
                 MetaData data = entry.getValue();
-                bufferedWriter.write(data.avgLatitude + "," + data.avgLongitude + "," + data.value + "\n");
+                bufferedWriter.write(data.avgLatitude + "," + data.avgLongitude + "," + data.value + "," + data.density + "\n");
             }
             bufferedWriter.flush();
         } catch (Exception e) {
@@ -63,8 +63,7 @@ public class MapGenerator {
                 latitude += Double.parseDouble(tuple[0]);
                 longitude += Double.parseDouble(tuple[1]);
             }
-
-            MetaData metaData = new MetaData(latitude / size, longitude / size, indexMap.get(key));
+            MetaData metaData = new MetaData(latitude / size, longitude / size, indexMap.get(key), size);
             metaDataMap.put(key, metaData);
         }
     }

@@ -1,8 +1,6 @@
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +15,7 @@ public class IndexGenerator {
 
     static final int clusterNum = 2000;
     public Map<Integer, Double> indexMap = new HashMap<>();
+    Map<Integer, MetaData> metaDataMap = new HashMap<>();
     Map<Integer, List<Record>> mapTwitter = new HashMap<>();
     Map<Integer, List<Record>> map311 = new HashMap<>();
     Map<Integer, List<Record>> mapCrime = new HashMap<>();
@@ -26,16 +25,16 @@ public class IndexGenerator {
     Map<String, List<String[]>> tupleMap = new HashMap<>();
 
     public IndexGenerator() {
-        read();
-        valueCompute();
+        readFromFile();
     }
 
     public static void main(String args[]) {
         IndexGenerator indexGenerator = new IndexGenerator();
-        System.out.println("test");
+        indexGenerator.valueCompute();
+        indexGenerator.exportToFile();
     }
 
-    private void read() {
+    private void readFromFile() {
         try {
             File sourceFile = new File("result.csv");
             FileReader fileReader = new FileReader(sourceFile);
@@ -44,13 +43,6 @@ public class IndexGenerator {
             while ((line = bufferedReader.readLine()) != null) {
                 String[] fields = line.split(",");
                 Record record = new Record(fields[0], fields[1], fields[2], fields[3], fields[4]);
-                String[] tuple = {String.valueOf(record.getLatitude()), String.valueOf(record.getLongitude()), String.valueOf(record.getClusterId())};
-
-                if (!tupleMap.containsKey(tuple[2])) {
-                    tupleMap.put(tuple[2], new ArrayList<>());
-                }
-                tupleMap.get(tuple[2]).add(tuple);
-
                 if (record.getSourceId() == 0) {
                     if (!mapTwitter.containsKey(record.getClusterId()))
                         mapTwitter.put(record.getClusterId(), new ArrayList<>());
@@ -58,13 +50,37 @@ public class IndexGenerator {
                 } else if (record.getSourceId() == 1) {
                     if (!map311.containsKey(record.getClusterId()))
                         map311.put(record.getClusterId(), new ArrayList<>());
+                    record.setScore(-1 * record.getSocre());
                     map311.get(record.getClusterId()).add(record);
                 } else {
                     if (!mapCrime.containsKey(record.getClusterId()))
                         mapCrime.put(record.getClusterId(), new ArrayList<>());
+                    record.setScore(-1 * record.getSocre());
                     mapCrime.get(record.getClusterId()).add(record);
                 }
             }
+            bufferedReader.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    void exportToFile() {
+        try {
+            File targetFile = new File("output.csv");
+            FileWriter fileWriter = new FileWriter(targetFile);
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+            for (Map.Entry<Integer, MetaData> entry : metaDataMap.entrySet()) {
+                MetaData data = entry.getValue();
+                bufferedWriter.write(data.clusterId + "," + data.avgLatitude + "," + data.avgLongitude + "," + data.value + ","
+                        + data.density + ","
+                        + data.scoreTwitter + ","
+                        + data.scoreCrime + "," +
+                        +data.score311 + "," +
+                        "\n");
+            }
+            bufferedWriter.flush();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -79,13 +95,30 @@ public class IndexGenerator {
                 List<Record> listT = mapTwitter.get(i);
                 List<Record> listC = mapCrime.get(i);
                 List<Record> list3 = map311.get(i);
+                double latitude = 0, longitude = 0;
+                int size = list3.size() + listC.size() + listT.size();
+                for (Record record : listT) {
+                    latitude += record.getLatitude();
+                    longitude += record.getLongitude();
+                }
+                for (Record record : listC) {
+                    latitude += record.getLatitude();
+                    longitude += record.getLongitude();
+                }
+                for (Record record : list3) {
+                    latitude += record.getLatitude();
+                    longitude += record.getLongitude();
+                }
+
+                MetaData metaData = new MetaData(latitude / size, longitude / size, size);
+                metaDataMap.put(i, metaData);
                 double avgT = 0, avgC = 0, avg3 = 0;
                 for (Record record : listT) {
                     avgT += record.getSocre();
                 }
                 avgT = avgT / listT.size();
-                avgC = listC.size() / (double) listT.size();
-                avg3 = list3.size() / (double) listT.size();
+                avgC = -listC.size() / (double) listT.size();
+                avg3 = -list3.size() / (double) listT.size();
                 dsT.addValue(avgT);
                 dsC.addValue(avgC);
                 ds3.addValue(avg3);
@@ -93,7 +126,6 @@ public class IndexGenerator {
                 valueTwitter.put(i, avgT);
                 valueCrime.put(i, avgC);
                 value311.put(i, avg3);
-
             }
         }
 
@@ -103,21 +135,19 @@ public class IndexGenerator {
 
         System.out.println(svT + " " + svC + " " + sv3);
 
-        DescriptiveStatistics checkT = new DescriptiveStatistics();
-        DescriptiveStatistics checkC = new DescriptiveStatistics();
-        DescriptiveStatistics check3 = new DescriptiveStatistics();
 
         for (Map.Entry<Integer, Double> entry : valueTwitter.entrySet()) {
             int i = entry.getKey();
             double normalT = valueTwitter.get(i) / svT;
             double normalC = valueCrime.get(i) / svC;
             double normal3 = value311.get(i) / sv3;
-            checkT.addValue(normalT);
-            checkC.addValue(normalC);
-            check3.addValue(normal3);
             System.out.println(i + " " + normalT + " " + normalC + " " + normal3);
-            indexMap.put(i, normal3 + normalC + normalT);
+            metaDataMap.get(i).setValue(normalT + normal3 + normalC);
+            metaDataMap.get(i).scoreTwitter = normalT;
+            metaDataMap.get(i).scoreCrime = normalC;
+            metaDataMap.get(i).score311 = normal3;
+            metaDataMap.get(i).clusterId = i;
+            //indexMap.put(i, normal3 + normalC + normalT);
         }
-        System.out.println(checkT.getStandardDeviation() + " " + checkC.getStandardDeviation() + " " + check3.getStandardDeviation());
     }
 }

@@ -52,7 +52,11 @@ public class Record {
         return socre;
     }
 
-    public void setSocre(double socre) {
+    public void setScore(double socre) {
         this.socre = socre;
+    }
+
+    public String toString() {
+        return sourceId + " " + clusterId + " " + latitude + " " + longitude;
     }
 }
